@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>VSR • Учебный кабинет (VK style)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    /* VK-like light */
+    --bg: #eef1f5;
+    --card: #ffffff;
+    --text: #0e1621;
+    --muted:#6b7280;
+    --border:#e6ebf2;
+    --accent:#2787F5;          /* VK blue */
+    --accent-2:#1a6bd7;
+    --ok:#21b35b;
+    --danger:#e64646;
+    --warn:#ffb620;
+    --chip:#f6f7f9;
+    --sidebar:#ffffff;
+    --sidebar-border:#e6ebf2;
+    --input-bg:#ffffff;
+    --input-border:#dfe4ec;
+    --shadow: 0 8px 22px rgba(15,35,69,.08);
+  }
+  [data-theme="dark"]{
+    --bg:#0f1216;
+    --card:#14181f;
+    --text:#e8eef7;
+    --muted:#9aa7b8;
+    --border:#1d2530;
+    --accent:#2b8cff;
+    --accent-2:#157aff;
+    --ok:#2adf77;
+    --danger:#ff5c5c;
+    --warn:#ffd166;
+    --chip:#1a202a;
+    --sidebar:#12161c;
+    --sidebar-border:#1c2430;
+    --input-bg:#0f141b;
+    --input-border:#1e2835;
+    --shadow: 0 8px 22px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,system-ui,Segoe UI,Arial;
+    background:var(--bg); color:var(--text);
+  }
+  .app{
+    display:grid; grid-template-columns:260px 1fr; min-height:100vh;
+  }
+
+  /* Sidebar */
+  .sidebar{
+    background:var(--sidebar);
+    border-right:1px solid var(--sidebar-border);
+    padding:16px 14px; display:flex; flex-direction:column; gap:14px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:12px}
+  .brand svg{border-radius:12px;box-shadow:var(--shadow)}
+  .brand .title{font-weight:800;letter-spacing:.2px}
+  .nav{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .nav button{
+    all:unset; display:flex; gap:10px; align-items:center;
+    padding:10px 12px; border-radius:10px; cursor:pointer;
+    color:var(--text);
+  }
+  .nav button:hover{background:var(--chip)}
+  .nav button.active{background:var(--accent); color:#fff}
+  .nav .i{width:18px;height:18px;opacity:.8}
+  .hr{height:1px;background:var(--sidebar-border);margin:8px 0}
+
+  .panel{
+    margin-top:auto; display:flex; flex-direction:column; gap:6px
+  }
+  .sbtn{
+    display:flex; align-items:center; gap:8px;
+    padding:10px 12px; border-radius:10px; cursor:pointer;
+    border:1px solid var(--input-border); background:var(--card);
+  }
+  .sbtn:hover{border-color:var(--accent)}
+  .theme-switch{display:flex; align-items:center; justify-content:space-between;
+    border:1px solid var(--input-border); background:var(--card);
+    padding:10px 12px; border-radius:10px; cursor:pointer;
+  }
+
+  /* Main */
+  .main{padding:20px; overflow:auto}
+  .toolbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px}
+
+  .btn{
+    background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:9px 12px; font-weight:700; cursor:pointer;
+  }
+  .btn:hover{background:var(--accent-2)}
+  .btn.ghost{
+    background:transparent;color:var(--accent); border:1px solid var(--accent);
+  }
+  .btn.warn{background:var(--warn); color:#111}
+  .btn.danger{background:var(--danger)}
+  .btn.ok{background:var(--ok)}
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    box-shadow:var(--shadow);
+  }
+  .pad{padding:14px}
+
+  .grid{display:grid; gap:12px}
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:1100px){ .grid.cols-3,.grid.cols-4{grid-template-columns:1fr 1fr}}
+  @media(max-width:760px){ .app{grid-template-columns:1fr} .grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}}
+
+  .field{display:flex;flex-direction:column;gap:6px}
+  label.small{font-size:12px;color:var(--muted)}
+  input[type="text"], input[type="number"], input[type="date"], select, textarea{
+    width:100%; background:var(--input-bg); color:var(--text);
+    border:1px solid var(--input-border); border-radius:10px; padding:9px 10px;
+    outline:none;
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .tag{font-size:12px;border:1px solid var(--input-border); background:var(--chip); padding:4px 8px; border-radius:999px}
+  .muted{color:var(--muted)}
+
+  /* Students list */
+  .student-card{display:flex; gap:12px; padding:12px; align-items:center}
+  .ava{
+    width:52px; height:52px; border-radius:50%;
+    background:#dfe6f3; overflow:hidden; flex:0 0 52px; border:1px solid var(--input-border)
+  }
+  .ava img{width:100%;height:100%;object-fit:cover}
+  .sc-main{flex:1}
+  .sc-name{font-weight:800}
+  .sc-sub{font-size:12px;color:var(--muted)}
+  .sc-actions{display:flex; gap:6px}
+
+  /* Profile header */
+  .profile{
+    display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;
+  }
+  .ava-lg{
+    width:92px;height:92px;border-radius:50%;overflow:hidden;border:2px solid var(--input-border);
+    cursor:pointer;background:#dfe6f3; position:relative;
+  }
+  .ava-lg input{display:none}
+  .ava-lg .hint{
+    position:absolute;left:0;bottom:0;width:100%;text-align:center;font-size:11px;
+    background:rgba(0,0,0,.5);color:#fff;padding:3px 0
+  }
+  .pf-title{font-size:20px;font-weight:800}
+  .pf-sub{font-size:13px;color:var(--muted)}
+  .profile .right{display:flex; gap:8px}
+
+  table{width:100%; border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--border); padding:10px; text-align:left; font-size:14px}
+  th{color:var(--muted); font-weight:700}
+  tr:hover td{background:color-mix(in srgb, var(--accent) 6%, transparent)}
+
+  details.graph{border:1px dashed var(--input-border); border-radius:12px; padding:10px}
+  details.graph[open]{background:var(--chip)}
+  details.graph summary{cursor:pointer; list-style:none; font-weight:700}
+  details.graph summary::-webkit-details-marker{display:none}
+
+  .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px;border-radius:999px;border:1px solid var(--input-border); background:var(--chip)}
+  .kv{display:flex; gap:8px; align-items:center}
+
+  .empty{padding:18px; text-align:center; color:var(--muted)}
+
+  /* Modals */
+  .modal{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.45); z-index:9999}
+  .modal.show{display:flex}
+  .modal .box{background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); width:min(680px,calc(100% - 24px))}
+  .modal .head{padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between}
+  .modal .body{padding:14px}
+  .modal .foot{padding:12px 14px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <!-- VSR логотип в vk-стиле -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 48 48">
+        <rect width="48" height="48" rx="12" fill="#2787F5"/>
+        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+              font-family="Verdana, Geneva, sans-serif"
+              font-weight="700" font-size="18" fill="white">VSR</text>
+      </svg>
+      <div>
+        <div class="title">Учебный кабинет</div>
+        <div class="muted" style="font-size:12px">ВСРом не становятся..</div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <nav class="nav" id="nav">
+      <button class="active" data-tab="students">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4Zm0-2a4 4 0 1 1 .001-8.001A4 4 0 0 1 12 10Z"/></svg>
+        Ученики
+      </button>
+      <button data-tab="curators">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5Z"/></svg>
+        Кураторы
+      </button>
+      <button data-tab="leaders">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M7 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm10 0a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-5 2c-3.33 0-10 1.67-10 5v3h8v-3c0-1.18.41-2.27 1.1-3.15A11.2 11.2 0 0 1 12 14Zm5 0c.84 0 1.65.06 2.44.17A6 6 0 0 1 22 19v3h-8v-3a6 6 0 0 1 3-5.2A13 13 0 0 1 17 14Z"/></svg>
+        Руководители
+      </button>
+      <button data-tab="groups">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18v14H3zM7 9h10v2H7z"/></svg>
+        Группы
+      </button>
+      <button data-tab="targets">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10h-2A8 8 0 1 1 12 4V2Zm1 0v8h8A8 8 0 0 0 13 2Z"/></svg>
+        Цели
+      </button>
+      <button data-tab="metrics">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M4 13h4v7H4v-7Zm6-6h4v13h-4V7Zm6 3h4v10h-4V10Z"/></svg>
+        Показатели
+      </button>
+      <button data-tab="settings">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a3 3 0 1 0-3-3 3.003 3.003 0 0 0 3 3Zm8.94-2a7.987 7.987 0 0 0-.35-2l2.11-1.65-2-3.46-2.49 1a8.315 8.315 0 0 0-1.74-1L14.5 1h-5l-.98 3.39a8.315 8.315 0 0 0-1.74 1l-2.49-1-2 3.46L3.4 11a7.987 7.987 0 0 0 0 4l-2.11 1.65 2 3.46 2.49-1c.54.4 1.13.74 1.74 1L9.5 23h5l.98-3.39c.61-.26 1.2-.6 1.74-1l2.49 1 2-3.46L20.59 13c.24-.65.35-1.32.35-2Z"/></svg>
+        Настройки
+      </button>
+    </nav>
+
+    <div class="hr"></div>
+
+    <div class="panel">
+      <label class="sbtn" style="justify-content:space-between">
+        <span class="kv"><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2ZM5 4v9l7-4 7 4V4H5Z"/></svg> Импорт сессии</span>
+        <input type="file" id="importSession" accept=".json" style="display:none">
+        <span class="btn ghost" onclick="document.getElementById('importSession').click()">Выбрать</span>
+      </label>
+      <button class="sbtn" id="exportSessionBtn"><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2ZM5 4v9l7-4 7 4V4H5Z"/></svg> Экспорт сессии</button>
+      <button class="sbtn" id="downloadHtmlBtn"><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16l4-4h10a2 2 0 0 0 2-2V6Z"/></svg> Сохранить страницу</button>
+
+      <button class="theme-switch" id="themeToggle">
+        Тема
+        <span class="tag" id="themeLabel">Светлая</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- Табы -->
+    <section id="tab-students">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Ученики</h2>
+        <button class="btn" id="addStudentBtn">Добавить ученика</button>
+      </div>
+
+      <div class="grid cols-3" id="studentsList"></div>
+
+      <!-- ЛК ученика -->
+      <div id="studentProfile" class="card pad" style="margin-top:14px; display:none"></div>
+    </section>
+
+    <section id="tab-curators" style="display:none">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Кураторы (по площадкам)</h2>
+        <button class="btn" id="addCuratorBtn">Добавить куратора</button>
+      </div>
+      <div class="grid cols-3" id="curatorsList"></div>
+    </section>
+
+    <section id="tab-leaders" style="display:none">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Руководители (площадки + направления)</h2>
+        <button class="btn" id="addLeaderBtn">Добавить руководителя</button>
+      </div>
+      <div class="grid cols-3" id="leadersList"></div>
+    </section>
+
+    <section id="tab-groups" style="display:none">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">Группы</h2>
+        <button class="btn" id="addGroupBtn">Добавить группу</button>
+      </div>
+      <div id="groupsList" class="grid cols-3"></div>
+    </section>
+
+    <section id="tab-targets" style="display:none">
+      <h2 style="margin-top:0">Целевые показатели</h2>
+      <div class="card pad" style="max-width:720px">
+        <div class="grid cols-2">
+          <div class="field">
+            <label class="small">Целевой AHT, сек</label>
+            <input type="number" id="targetAht" min="1" placeholder="например, 300">
+          </div>
+          <div class="field">
+            <label class="small">Целевой NSAT, %</label>
+            <input type="number" id="targetNsat" min="0" max="100" placeholder="например, 70">
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px;justify-content:flex-end">
+          <button class="btn ok" id="saveTargetsBtn">Сохранить цели</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-metrics" style="display:none">
+      <h2 style="margin-top:0">Сводка показателей</h2>
+      <div class="card pad">
+        <div class="row" style="gap:12px;flex-wrap:wrap">
+          <div class="pill">Средний AHT: <strong id="avgAhtLbl">—</strong></div>
+          <div class="pill">Всего звонков: <strong id="sumCallsLbl">—</strong></div>
+          <div class="pill">Средний NSAT: <strong id="avgNsatLbl">—</strong></div>
+          <div class="pill">Промоутеры/Нейтралы/Детракторы: <strong id="pndLbl">—</strong></div>
+          <div class="pill">Цели: <span id="targetsLbl" class="muted">—</span></div>
+        </div>
+        <div style="margin-top:12px">
+          <details class="graph">
+            <summary>График средних по всем ученикам</summary>
+            <canvas id="globalChart" height="120"></canvas>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-settings" style="display:none">
+      <h2 style="margin-top:0">Настройки</h2>
+      <div class="card pad" style="max-width:720px">
+        <div class="field">
+          <label class="small">Режим темы</label>
+          <div class="row">
+            <button class="btn ghost" onclick="setTheme('light')">Светлая</button>
+            <button class="btn ghost" onclick="setTheme('dark')">Тёмная</button>
+          </div>
+        </div>
+        <div class="hr" style="margin:12px 0"></div>
+        <div class="field">
+          <label class="small">Резервное копирование</label>
+          <div class="row">
+            <button class="btn" id="exportSessionBtn2">Экспорт JSON</button>
+            <label class="btn ghost" for="importSession2">Импорт JSON</label>
+            <input type="file" id="importSession2" accept=".json" style="display:none">
+            <button class="btn" id="downloadHtmlBtn2">Сохранить HTML</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== Modals ===== -->
+
+<!-- Student add/edit -->
+<div class="modal" id="studentModal">
+  <div class="box">
+    <div class="head">
+      <strong id="studentModalTitle">Новый ученик</strong>
+      <button class="btn ghost" onclick="closeModal('studentModal')">Закрыть</button>
+    </div>
+    <div class="body">
+      <div class="grid cols-2">
+        <div class="field">
+          <label class="small">ФИО</label>
+          <input type="text" id="stName">
+        </div>
+        <div class="field">
+          <label class="small">Тип</label>
+          <select id="stType">
+            <option value="Очный">Очный</option>
+            <option value="Заочный">Заочный</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="small">Группа</label>
+          <select id="stGroup"></select>
+        </div>
+        <div class="field">
+          <label class="small">Куратор</label>
+          <select id="stCurator"></select>
+        </div>
+        <div class="field">
+          <label class="small">Руководитель</label>
+          <select id="stLeader"></select>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn danger" id="stDeleteBtn" style="display:none">Удалить</button>
+      <button class="btn ok" id="stSaveBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Curator -->
+<div class="modal" id="curatorModal">
+  <div class="box">
+    <div class="head">
+      <strong id="curatorModalTitle">Новый куратор</strong>
+      <button class="btn ghost" onclick="closeModal('curatorModal')">Закрыть</button>
+    </div>
+    <div class="body">
+      <div class="grid cols-2">
+        <div class="field">
+          <label class="small">ФИО</label>
+          <input type="text" id="cuName">
+        </div>
+        <div class="field">
+          <label class="small">Площадка (город)</label>
+          <input type="text" id="cuCity">
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn danger" id="cuDeleteBtn" style="display:none">Удалить</button>
+      <button class="btn ok" id="cuSaveBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leader -->
+<div class="modal" id="leaderModal">
+  <div class="box">
+    <div class="head">
+      <strong id="leaderModalTitle">Новый руководитель</strong>
+      <button class="btn ghost" onclick="closeModal('leaderModal')">Закрыть</button>
+    </div>
+    <div class="body">
+      <div class="grid cols-3">
+        <div class="field">
+          <label class="small">ФИО</label>
+          <input type="text" id="ldName">
+        </div>
+        <div class="field">
+          <label class="small">Площадка (город)</label>
+          <input type="text" id="ldCity">
+        </div>
+        <div class="field">
+          <label class="small">Направление</label>
+          <input type="text" id="ldDirection" placeholder="например, VAS / KEY">
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn danger" id="ldDeleteBtn" style="display:none">Удалить</button>
+      <button class="btn ok" id="ldSaveBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Group -->
+<div class="modal" id="groupModal">
+  <div class="box">
+    <div class="head">
+      <strong id="groupModalTitle">Новая группа</strong>
+      <button class="btn ghost" onclick="closeModal('groupModal')">Закрыть</button>
+    </div>
+    <div class="body">
+      <div class="grid cols-2">
+        <div class="field">
+          <label class="small">Название</label>
+          <input type="text" id="grName" placeholder="напр., УД-16">
+        </div>
+        <div class="field">
+          <label class="small">Куратор группы</label>
+          <select id="grCurator"></select>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn danger" id="grDeleteBtn" style="display:none">Удалить</button>
+      <button class="btn ok" id="grSaveBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====================== DATA ====================== */
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+let store = {
+  students: [],
+  curators: [],
+  leaders: [],
+  groups: [],
+  targets: { aht: 300, nsat: 70 },
+  theme: 'light'
+};
+
+// — Стартовые демо-данные (можно удалить) —
+store.curators = [
+  { id: uid(), name: 'Зубченко Александра', city: 'Пермь' },
+  { id: uid(), name: 'Сергеев Степан', city: 'Саратов' }
+];
+store.leaders = [
+  { id: uid(), name: 'Гурьянова Марина', city:'Саратов', direction:'VAS' },
+  { id: uid(), name: 'Варфаломеева Елена', city:'Саратов', direction:'KEY' }
+];
+store.groups = [
+  { id: uid(), name: 'УД-16', curatorId: store.curators[0].id }
+];
+
+store.students = [
+  {
+    id: uid(),
+    name: 'Веприцкая Анастасия',
+    type: 'Очный',
+    groupId: store.groups[0].id,
+    curatorId: store.curators[1].id,
+    leaderId: store.leaders[0].id,
+    avatar: '',
+    stats: [
+      // {date:'2025-08-01', aht:400, calls:60, promoters:10, neutrals:0, detractors:0, nsat:100}
+    ]
+  }
+];
+
+/* ====================== STATE ====================== */
+let currentTab = 'students';
+let selectedStudentId = null;
+
+const els = {
+  // tabs
+  tabStudents: document.getElementById('tab-students'),
+  tabCurators: document.getElementById('tab-curators'),
+  tabLeaders: document.getElementById('tab-leaders'),
+  tabGroups: document.getElementById('tab-groups'),
+  tabTargets: document.getElementById('tab-targets'),
+  tabMetrics: document.getElementById('tab-metrics'),
+  tabSettings: document.getElementById('tab-settings'),
+
+  // lists
+  studentsList: document.getElementById('studentsList'),
+  studentProfile: document.getElementById('studentProfile'),
+  curatorsList: document.getElementById('curatorsList'),
+  leadersList: document.getElementById('leadersList'),
+  groupsList: document.getElementById('groupsList'),
+
+  // targets
+  targetAht: document.getElementById('targetAht'),
+  targetNsat: document.getElementById('targetNsat'),
+  saveTargetsBtn: document.getElementById('saveTargetsBtn'),
+
+  // metrics summary
+  avgAhtLbl: document.getElementById('avgAhtLbl'),
+  avgNsatLbl: document.getElementById('avgNsatLbl'),
+  sumCallsLbl: document.getElementById('sumCallsLbl'),
+  pndLbl: document.getElementById('pndLbl'),
+  targetsLbl: document.getElementById('targetsLbl'),
+
+  // global chart
+  globalChartCanvas: document.getElementById('globalChart'),
+
+  // sidebar buttons
+  importSession: document.getElementById('importSession'),
+  exportSessionBtn: document.getElementById('exportSessionBtn'),
+  downloadHtmlBtn: document.getElementById('downloadHtmlBtn'),
+  themeToggle: document.getElementById('themeToggle'),
+  themeLabel: document.getElementById('themeLabel'),
+
+  // header actions
+  addStudentBtn: document.getElementById('addStudentBtn'),
+  addCuratorBtn: document.getElementById('addCuratorBtn'),
+  addLeaderBtn: document.getElementById('addLeaderBtn'),
+  addGroupBtn: document.getElementById('addGroupBtn'),
+
+  // settings duplicates
+  exportSessionBtn2: document.getElementById('exportSessionBtn2'),
+  importSession2: document.getElementById('importSession2'),
+  downloadHtmlBtn2: document.getElementById('downloadHtmlBtn2'),
+};
+
+/* ====================== NAV ====================== */
+document.getElementById('nav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  switchTab(btn.dataset.tab);
+});
+
+function switchTab(tab){
+  currentTab = tab;
+  ['students','curators','leaders','groups','targets','metrics','settings'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = (t===tab) ? '' : 'none';
+  });
+  if(tab==='students'){ renderStudents(); }
+  if(tab==='curators'){ renderCurators(); }
+  if(tab==='leaders'){ renderLeaders(); }
+  if(tab==='groups'){ renderGroups(); }
+  if(tab==='targets'){ renderTargets(); }
+  if(tab==='metrics'){ renderSummary(); renderGlobalChart(); }
+}
+
+/* ====================== THEME ====================== */
+function setTheme(mode){
+  document.documentElement.setAttribute('data-theme', mode);
+  store.theme = mode;
+  els.themeLabel.textContent = mode==='dark' ? 'Тёмная' : 'Светлая';
+}
+els.themeToggle.addEventListener('click', ()=>{
+  const next = (store.theme==='light')?'dark':'light';
+  setTheme(next);
+});
+setTheme(store.theme);
+
+/* ====================== MODALS UTIL ====================== */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ====================== SELECT UTIL ====================== */
+function buildSelectOptions(arr, valueKey='id', labelFn=(x)=>x.name, emptyLabel='— не выбрано —', selected=null){
+  let html = `<option value="">${emptyLabel}</option>`;
+  for(const it of arr){
+    const v = it[valueKey]; const lbl = labelFn(it);
+    html += `<option value="${String(v)}"${selected==v?' selected':''}>${escapeHtml(lbl)}</option>`;
+  }
+  return html;
+}
+const escapeHtml = (s)=> String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+/* ====================== STUDENTS LIST & PROFILE ====================== */
+els.addStudentBtn.addEventListener('click', ()=> openStudentModal());
+
+function renderStudents(){
+  els.studentsList.innerHTML = '';
+  els.studentProfile.style.display = 'none';
+
+  if(store.students.length===0){
+    els.studentsList.innerHTML = `<div class="card pad empty">Пока нет учеников. Нажмите «Добавить ученика».</div>`;
+    return;
+  }
+
+  for(const s of store.students){
+    const group = store.groups.find(g=>g.id===s.groupId);
+    const curator = store.curators.find(c=>c.id===s.curatorId);
+    const leader = store.leaders.find(l=>l.id===s.leaderId);
+
+    const card = document.createElement('div');
+    card.className = 'card student-card';
+    card.innerHTML = `
+      <div class="ava">${s.avatar?`<img src="${s.avatar}">`:''}</div>
+      <div class="sc-main">
+        <div class="sc-name">${escapeHtml(s.name)}</div>
+        <div class="sc-sub">${group?escapeHtml(group.name):'Без группы'} • ${curator?escapeHtml(curator.name):'—'} • ${leader?escapeHtml(leader.name):'—'}</div>
+      </div>
+      <div class="sc-actions">
+        <button class="btn ghost" data-act="open">Открыть</button>
+        <button class="btn ghost" data-act="edit">Редактировать</button>
+        <button class="btn danger" data-act="del">Удалить</button>
+      </div>
+    `;
+    card.querySelector('[data-act="open"]').onclick = ()=> openStudentProfile(s.id);
+    card.querySelector('[data-act="edit"]').onclick = ()=> openStudentModal(s.id);
+    card.querySelector('[data-act="del"]').onclick = ()=>{
+      if(confirm('Удалить этого ученика?')){
+        store.students = store.students.filter(x=>x.id!==s.id);
+        if(selectedStudentId===s.id) selectedStudentId=null;
+        renderStudents();
+      }
+    };
+    els.studentsList.appendChild(card);
+  }
+}
+
+function openStudentProfile(id){
+  selectedStudentId = id;
+  const s = store.students.find(x=>x.id===id);
+  if(!s) return;
+  els.studentProfile.style.display = '';
+  els.studentProfile.innerHTML = '';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'profile';
+  header.innerHTML = `
+    <label class="ava-lg" title="Нажмите, чтобы загрузить фото">
+      ${s.avatar?`<img src="${s.avatar}" style="width:100%;height:100%;object-fit:cover">`:''}
+      <input type="file" accept="image/*">
+      <div class="hint">изменить фото</div>
+    </label>
+    <div>
+      <div class="pf-title">${escapeHtml(s.name)}</div>
+      <div class="pf-sub">Личная карточка ученика</div>
+      <div class="row" style="margin-top:8px">
+        <div class="tag">Тип: ${escapeHtml(s.type||'—')}</div>
+        <div class="tag">Всего записей: ${s.stats.length}</div>
+      </div>
+    </div>
+    <div class="right">
+      <button class="btn" onclick="openStudentModal('${s.id}')">Редактировать</button>
+    </div>
+  `;
+  const inputFile = header.querySelector('input[type="file"]');
+  inputFile.onchange = (e)=>{
+    const f = e.target.files?.[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = (ev)=>{ s.avatar = ev.target.result; openStudentProfile(id); };
+    rd.readAsDataURL(f);
+  };
+  els.studentProfile.appendChild(header);
+
+  // Editable links (group/curator/leader)
+  const links = document.createElement('div');
+  links.className = 'card pad';
+  links.style.marginTop = '10px';
+  links.innerHTML = `
+    <div class="grid cols-3">
+      <div class="field">
+        <label class="small">Группа</label>
+        <select id="pfGroup"></select>
+      </div>
+      <div class="field">
+        <label class="small">Куратор</label>
+        <select id="pfCurator"></select>
+      </div>
+      <div class="field">
+        <label class="small">Руководитель</label>
+        <select id="pfLeader"></select>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px">
+      <button class="btn ok" id="pfSaveLinkBtn">Сохранить привязки</button>
+    </div>
+  `;
+  els.studentProfile.appendChild(links);
+  // populate selects
+  links.querySelector('#pfGroup').innerHTML   = buildSelectOptions(store.groups, 'id', x=>x.name, 'Без группы', s.groupId);
+  links.querySelector('#pfCurator').innerHTML = buildSelectOptions(store.curators,'id', x=>`${x.name} • ${x.city}`, '—', s.curatorId);
+  links.querySelector('#pfLeader').innerHTML  = buildSelectOptions(store.leaders, 'id', x=>`${x.name} • ${x.city} • ${x.direction}`, '—', s.leaderId);
+  links.querySelector('#pfSaveLinkBtn').onclick = ()=>{
+    s.groupId   = links.querySelector('#pfGroup').value || null;
+    s.curatorId = links.querySelector('#pfCurator').value || null;
+    s.leaderId  = links.querySelector('#pfLeader').value || null;
+    renderStudents(); // обновим подписи в списке
+    openStudentProfile(id); // перерисуем карточку
+  };
+
+  // STATS input
+  const statsCard = document.createElement('div');
+  statsCard.className = 'card pad';
+  statsCard.style.marginTop = '10px';
+  statsCard.innerHTML = `
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <strong>Показатели (AHT/NSAT) — по календарю</strong>
+      <span class="muted">NSAT считается как (Промоутеры - Детракторы) / (П+Н+Д) × 100%</span>
+    </div>
+    <div class="grid cols-4" style="margin-top:10px">
+      <div class="field"><label class="small">Дата</label><input type="date" id="stDate"></div>
+      <div class="field"><label class="small">AHT, сек</label><input type="number" id="stAht" min="1" placeholder="сек"></div>
+      <div class="field"><label class="small">Звонки, шт</label><input type="number" id="stCalls" min="0" placeholder="0"></div>
+      <div class="field"><label class="small">Промоутеры</label><input type="number" id="stProm" min="0" placeholder="0"></div>
+      <div class="field"><label class="small">Нейтралы</label><input type="number" id="stNeut" min="0" placeholder="0"></div>
+      <div class="field"><label class="small">Детракторы</label><input type="number" id="stDetr" min="0" placeholder="0"></div>
+      <div class="field"><label class="small">NSAT, % (авто)</label><input type="number" id="stNsat" disabled placeholder="0"></div>
+      <div class="field" style="align-self:end"><button class="btn ok" id="addStatBtn">Добавить / Обновить</button></div>
+    </div>
+
+    <div style="margin-top:10px">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Дата</th><th>AHT</th><th>Звонки</th><th>П</th><th>Н</th><th>Д</th><th>NSAT, %</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="statsTbody"></tbody>
+      </table>
+      ${s.stats.length===0?'<div class="empty">Записей пока нет</div>':''}
+    </div>
+
+    <div style="margin-top:12px">
+      <details class="graph" open>
+        <summary>График динамики</summary>
+        <canvas id="stChart" height="130"></canvas>
+      </details>
+    </div>
+  `;
+  els.studentProfile.appendChild(statsCard);
+
+  // bind inputs calculation
+  const dateEl = statsCard.querySelector('#stDate');
+  const ahtEl = statsCard.querySelector('#stAht');
+  const callsEl = statsCard.querySelector('#stCalls');
+  const pEl = statsCard.querySelector('#stProm');
+  const nEl = statsCard.querySelector('#stNeut');
+  const dEl = statsCard.querySelector('#stDetr');
+  const nsatEl = statsCard.querySelector('#stNsat');
+
+  function recalcNsat(){
+    const P = Number(pEl.value||0);
+    const N = Number(nEl.value||0);
+    const D = Number(dEl.value||0);
+    const total = P+N+D;
+    const nsat = total>0 ? Math.round(((P - D)/total)*100) : 0;
+    nsatEl.value = nsat;
+  }
+  [pEl,nEl,dEl].forEach(inp=>inp.addEventListener('input', recalcNsat));
+
+  // If selecting an existing date -> prefill
+  statsCard.querySelector('#addStatBtn').onclick = ()=>{
+    const date = dateEl.value;
+    if(!date){ alert('Выберите дату'); return; }
+    const aht = Number(ahtEl.value||0);
+    if(aht<=0){ alert('Введите AHT в секундах'); return; }
+    const calls = Number(callsEl.value||0);
+    const P = Number(pEl.value||0), N = Number(nEl.value||0), D = Number(dEl.value||0);
+    const total = P+N+D;
+    const nsat = total>0 ? Math.round(((P-D)/total)*100) : 0;
+
+    const idx = s.stats.findIndex(x=>x.date===date);
+    const rec = { date, aht, calls, promoters:P, neutrals:N, detractors:D, nsat };
+    if(idx>=0) s.stats[idx] = rec; else s.stats.push(rec);
+    s.stats.sort((a,b)=> a.date.localeCompare(b.date));
+    openStudentProfile(s.id);
+  };
+
+  // table
+  const tbody = statsCard.querySelector('#statsTbody');
+  if(s.stats.length>0){
+    let i=1;
+    for(const st of s.stats){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i++}</td>
+        <td>${st.date}</td>
+        <td>${st.aht}</td>
+        <td>${st.calls}</td>
+        <td>${st.promoters}</td>
+        <td>${st.neutrals}</td>
+        <td>${st.detractors}</td>
+        <td>${st.nsat}</td>
+        <td class="row">
+          <button class="btn ghost" data-act="edit">Ред.</button>
+          <button class="btn danger" data-act="del">Удалить</button>
+        </td>
+      `;
+      tr.querySelector('[data-act="edit"]').onclick = ()=>{
+        dateEl.value = st.date;
+        ahtEl.value = st.aht;
+        callsEl.value = st.calls;
+        pEl.value = st.promoters;
+        nEl.value = st.neutrals;
+        dEl.value = st.detractors;
+        nsatEl.value = st.nsat;
+      };
+      tr.querySelector('[data-act="del"]').onclick = ()=>{
+        if(confirm('Удалить запись за '+st.date+'?')){
+          s.stats = s.stats.filter(x=>x!==st);
+          openStudentProfile(s.id);
+        }
+      };
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Chart
+  renderStudentChart('stChart', s.stats);
+}
+
+function renderStudentChart(canvasId, stats){
+  const ctx = document.getElementById(canvasId);
+  if(!ctx) return;
+  const labels = stats.map(x=>x.date);
+  const aht = stats.map(x=>x.aht);
+  const ns = stats.map(x=>x.nsat ?? 0);
+
+  if(ctx._chartInstance){ ctx._chartInstance.destroy(); }
+  ctx._chartInstance = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        { label:'AHT, сек', data:aht, yAxisID:'y1', tension:.3 },
+        { label:'NSAT, %', data:ns, yAxisID:'y2', tension:.3 }
+      ]
+    },
+    options:{
+      responsive:true,
+      scales:{
+        y1:{ type:'linear', position:'left' },
+        y2:{ type:'linear', position:'right', min:0, max:100 }
+      },
+      plugins:{ legend:{ display:true } }
+    }
+  });
+}
+
+/* ====================== CURATORS ====================== */
+els.addCuratorBtn.addEventListener('click', ()=> openCuratorModal());
+
+function renderCurators(){
+  els.curatorsList.innerHTML = '';
+  if(store.curators.length===0){
+    els.curatorsList.innerHTML = `<div class="card pad empty">Добавьте куратора</div>`;
+    return;
+  }
+  for(const c of store.curators){
+    const card = document.createElement('div');
+    card.className = 'card pad';
+    card.innerHTML = `
+      <div style="font-weight:800">${escapeHtml(c.name)}</div>
+      <div class="muted" style="font-size:13px">${escapeHtml(c.city)}</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" data-act="edit">Редактировать</button>
+        <button class="btn danger" data-act="del">Удалить</button>
+      </div>
+    `;
+    card.querySelector('[data-act="edit"]').onclick = ()=> openCuratorModal(c.id);
+    card.querySelector('[data-act="del"]').onclick = ()=>{
+      if(confirm('Удалить куратора?')){
+        // remove links
+        store.groups.forEach(g=>{ if(g.curatorId===c.id) g.curatorId=null; });
+        store.students.forEach(s=>{ if(s.curatorId===c.id) s.curatorId=null; });
+        store.curators = store.curators.filter(x=>x.id!==c.id);
+        renderCurators(); renderStudents();
+      }
+    };
+    els.curatorsList.appendChild(card);
+  }
+}
+
+/* ====================== LEADERS ====================== */
+els.addLeaderBtn && els.addLeaderBtn.addEventListener('click', ()=> openLeaderModal());
+
+function renderLeaders(){
+  els.leadersList.innerHTML = '';
+  if(store.leaders.length===0){
+    els.leadersList.innerHTML = `<div class="card pad empty">Добавьте руководителя</div>`;
+    return;
+  }
+  for(const l of store.leaders){
+    const card = document.createElement('div');
+    card.className = 'card pad';
+    card.innerHTML = `
+      <div style="font-weight:800">${escapeHtml(l.name)}</div>
+      <div class="muted" style="font-size:13px">${escapeHtml(l.city)} • ${escapeHtml(l.direction)}</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" data-act="edit">Редактировать</button>
+        <button class="btn danger" data-act="del">Удалить</button>
+      </div>
+    `;
+    card.querySelector('[data-act="edit"]').onclick = ()=> openLeaderModal(l.id);
+    card.querySelector('[data-act="del"]').onclick = ()=>{
+      if(confirm('Удалить руководителя?')){
+        store.students.forEach(s=>{ if(s.leaderId===l.id) s.leaderId=null; });
+        store.leaders = store.leaders.filter(x=>x.id!==l.id);
+        renderLeaders(); renderStudents();
+      }
+    };
+    els.leadersList.appendChild(card);
+  }
+}
+
+/* ====================== GROUPS ====================== */
+els.addGroupBtn && els.addGroupBtn.addEventListener('click', ()=> openGroupModal());
+
+function renderGroups(){
+  els.groupsList.innerHTML = '';
+  if(store.groups.length===0){
+    els.groupsList.innerHTML = `<div class="card pad empty">Добавьте группу</div>`;
+    return;
+  }
+  for(const g of store.groups){
+    const curator = store.curators.find(c=>c.id===g.curatorId);
+    const card = document.createElement('div');
+    card.className = 'card pad';
+    const members = store.students.filter(s=>s.groupId===g.id).length;
+    card.innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:800">${escapeHtml(g.name)}</div>
+        <div class="tag">Участников: ${members}</div>
+      </div>
+      <div class="muted" style="font-size:13px;margin-top:4px">Куратор: ${curator?escapeHtml(curator.name):'—'}</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" data-act="edit">Редактировать</button>
+        <button class="btn danger" data-act="del">Удалить</button>
+      </div>
+    `;
+    card.querySelector('[data-act="edit"]').onclick = ()=> openGroupModal(g.id);
+    card.querySelector('[data-act="del"]').onclick = ()=>{
+      if(confirm('Удалить группу?')){
+        store.students.forEach(s=>{ if(s.groupId===g.id) s.groupId=null; });
+        store.groups = store.groups.filter(x=>x.id!==g.id);
+        renderGroups(); renderStudents();
+      }
+    };
+    els.groupsList.appendChild(card);
+  }
+}
+
+/* ====================== TARGETS ====================== */
+function renderTargets(){
+  els.targetAht.value = store.targets.aht ?? '';
+  els.targetNsat.value = store.targets.nsat ?? '';
+}
+els.saveTargetsBtn.addEventListener('click', ()=>{
+  const aht = Number(els.targetAht.value||0);
+  const ns = Number(els.targetNsat.value||0);
+  if(aht<=0 || ns<0 || ns>100){ alert('Проверьте значения целей'); return; }
+  store.targets = { aht:aht, nsat:ns };
+  alert('Цели сохранены');
+});
+
+/* ====================== SUMMARY (Показатели) ====================== */
+let globalChartInstance = null;
+function renderSummary(){
+  // Средний AHT по всем дням — взвешенно по звонкам
+  let sumAhtCalls = 0, sumCalls = 0, sumP=0,sumN=0,sumD=0;
+  const dateMap = new Map(); // для глобального графика: YYYY-MM -> aggregated
+
+  for(const s of store.students){
+    for(const st of s.stats){
+      sumAhtCalls += (st.aht||0) * (st.calls||0);
+      sumCalls += (st.calls||0);
+      sumP += st.promoters||0; sumN += st.neutrals||0; sumD += st.detractors||0;
+
+      const ym = st.date?.slice(0,7);
+      if(ym){
+        const prev = dateMap.get(ym)||{calls:0, ahtCalls:0, P:0,N:0,D:0};
+        prev.calls += st.calls||0;
+        prev.ahtCalls += (st.aht||0) * (st.calls||0);
+        prev.P += st.promoters||0; prev.N += st.neutrals||0; prev.D += st.detractors||0;
+        dateMap.set(ym, prev);
+      }
+    }
+  }
+  const avgAht = sumCalls>0 ? Math.round(sumAhtCalls / sumCalls) : 0;
+  const totalResp = sumP+sumN+sumD;
+  const avgNsat = totalResp>0 ? Math.round(((sumP - sumD)/totalResp)*100) : 0;
+
+  els.avgAhtLbl.textContent = (sumCalls>0? avgAht+' сек' : '—');
+  els.sumCallsLbl.textContent = sumCalls;
+  els.avgNsatLbl.textContent = totalResp>0 ? (avgNsat+' %') : '—';
+  els.pndLbl.textContent = `${sumP} / ${sumN} / ${sumD}`;
+  els.targetsLbl.textContent = `AHT ≤ ${store.targets.aht} сек • NSAT ≥ ${store.targets.nsat}%`;
+
+  // Prepare data for global chart
+  const labels = [...dateMap.keys()].sort();
+  const dataAht = labels.map(k=>{
+    const o = dateMap.get(k);
+    return o.calls>0 ? Math.round(o.ahtCalls / o.calls) : 0;
+  });
+  const dataNs = labels.map(k=>{
+    const o=dateMap.get(k); const t=o.P+o.N+o.D;
+    return t>0? Math.round(((o.P-o.D)/t)*100) : 0;
+  });
+
+  if(globalChartInstance) globalChartInstance.destroy();
+  globalChartInstance = new Chart(els.globalChartCanvas, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'AHT, сек', data:dataAht, yAxisID:'y1', tension:.3 },
+      { label:'NSAT, %', data:dataNs, yAxisID:'y2', tension:.3 }
+    ]},
+    options:{
+      scales:{ y1:{position:'left'}, y2:{position:'right', min:0, max:100} }
+    }
+  });
+}
+function renderGlobalChart(){ /* построение выполняется в renderSummary() */ }
+
+/* ====================== STUDENT MODAL (ADD/EDIT) ====================== */
+let editingStudentId = null;
+function openStudentModal(id=null){
+  editingStudentId = id;
+  const title = document.getElementById('studentModalTitle');
+  const delBtn = document.getElementById('stDeleteBtn');
+  const saveBtn = document.getElementById('stSaveBtn');
+
+  // fill selects
+  document.getElementById('stGroup').innerHTML = buildSelectOptions(store.groups,'id',x=>x.name,'Без группы');
+  document.getElementById('stCurator').innerHTML = buildSelectOptions(store.curators,'id',x=>`${x.name} • ${x.city}`,'—');
+  document.getElementById('stLeader').innerHTML = buildSelectOptions(store.leaders,'id',x=>`${x.name} • ${x.city} • ${x.direction}`,'—');
+
+  if(id){
+    const s = store.students.find(x=>x.id===id);
+    title.textContent = 'Редактировать ученика';
+    document.getElementById('stName').value = s.name||'';
+    document.getElementById('stType').value = s.type||'Очный';
+    document.getElementById('stGroup').value = s.groupId||'';
+    document.getElementById('stCurator').value = s.curatorId||'';
+    document.getElementById('stLeader').value = s.leaderId||'';
+    delBtn.style.display = '';
+    delBtn.onclick = ()=>{
+      if(confirm('Удалить ученика?')){
+        store.students = store.students.filter(x=>x.id!==id);
+        selectedStudentId = null;
+        closeModal('studentModal'); renderStudents();
+      }
+    };
+  } else {
+    title.textContent = 'Новый ученик';
+    document.getElementById('stName').value = '';
+    document.getElementById('stType').value = 'Очный';
+    document.getElementById('stGroup').value = '';
+    document.getElementById('stCurator').value = '';
+    document.getElementById('stLeader').value = '';
+    delBtn.style.display = 'none';
+    delBtn.onclick = null;
+  }
+
+  saveBtn.onclick = ()=>{
+    const name = document.getElementById('stName').value.trim();
+    if(!name) return alert('Введите ФИО');
+    const st = {
+      name,
+      type: document.getElementById('stType').value,
+      groupId: document.getElementById('stGroup').value || null,
+      curatorId: document.getElementById('stCurator').value || null,
+      leaderId: document.getElementById('stLeader').value || null
+    };
+    if(editingStudentId){
+      const s = store.students.find(x=>x.id===editingStudentId);
+      Object.assign(s, st);
+    } else {
+      store.students.push({ id: uid(), avatar:'', stats:[], ...st });
+    }
+    closeModal('studentModal'); renderStudents();
+  };
+
+  openModal('studentModal');
+}
+
+/* ====================== CURATOR MODAL ====================== */
+let editingCuratorId = null;
+function openCuratorModal(id=null){
+  editingCuratorId = id;
+  const title = document.getElementById('curatorModalTitle');
+  const delBtn = document.getElementById('cuDeleteBtn');
+  const saveBtn = document.getElementById('cuSaveBtn');
+
+  if(id){
+    const c = store.curators.find(x=>x.id===id);
+    title.textContent='Редактировать куратора';
+    document.getElementById('cuName').value = c.name||'';
+    document.getElementById('cuCity').value = c.city||'';
+    delBtn.style.display = '';
+    delBtn.onclick = ()=>{
+      if(confirm('Удалить куратора?')){
+        store.groups.forEach(g=>{ if(g.curatorId===id) g.curatorId=null; });
+        store.students.forEach(s=>{ if(s.curatorId===id) s.curatorId=null; });
+        store.curators = store.curators.filter(x=>x.id!==id);
+        closeModal('curatorModal'); renderCurators(); renderGroups(); renderStudents();
+      }
+    };
+  } else {
+    title.textContent='Новый куратор';
+    document.getElementById('cuName').value = '';
+    document.getElementById('cuCity').value = '';
+    delBtn.style.display = 'none'; delBtn.onclick=null;
+  }
+
+  saveBtn.onclick = ()=>{
+    const name = document.getElementById('cuName').value.trim();
+    const city = document.getElementById('cuCity').value.trim();
+    if(!name || !city){ alert('Заполните ФИО и площадку'); return; }
+    if(editingCuratorId){
+      const c = store.curators.find(x=>x.id===editingCuratorId);
+      c.name=name; c.city=city;
+    } else {
+      store.curators.push({ id: uid(), name, city });
+    }
+    closeModal('curatorModal'); renderCurators(); renderGroups(); renderStudents();
+  };
+
+  openModal('curatorModal');
+}
+
+/* ====================== LEADER MODAL ====================== */
+let editingLeaderId = null;
+function openLeaderModal(id=null){
+  editingLeaderId = id;
+  const title = document.getElementById('leaderModalTitle');
+  const delBtn = document.getElementById('ldDeleteBtn');
+  const saveBtn = document.getElementById('ldSaveBtn');
+
+  if(id){
+    const l = store.leaders.find(x=>x.id===id);
+    title.textContent='Редактировать руководителя';
+    document.getElementById('ldName').value = l.name||'';
+    document.getElementById('ldCity').value = l.city||'';
+    document.getElementById('ldDirection').value = l.direction||'';
+    delBtn.style.display = '';
+    delBtn.onclick = ()=>{
+      if(confirm('Удалить руководителя?')){
+        store.students.forEach(s=>{ if(s.leaderId===id) s.leaderId=null; });
+        store.leaders = store.leaders.filter(x=>x.id!==id);
+        closeModal('leaderModal'); renderLeaders(); renderStudents();
+      }
+    };
+  } else {
+    title.textContent='Новый руководитель';
+    document.getElementById('ldName').value = '';
+    document.getElementById('ldCity').value = '';
+    document.getElementById('ldDirection').value = '';
+    delBtn.style.display = 'none'; delBtn.onclick=null;
+  }
+
+  saveBtn.onclick = ()=>{
+    const name = document.getElementById('ldName').value.trim();
+    const city = document.getElementById('ldCity').value.trim();
+    const direction = document.getElementById('ldDirection').value.trim();
+    if(!name || !city || !direction){ alert('Заполните все поля'); return; }
+    if(editingLeaderId){
+      const l = store.leaders.find(x=>x.id===editingLeaderId);
+      l.name=name; l.city=city; l.direction=direction;
+    } else {
+      store.leaders.push({ id: uid(), name, city, direction });
+    }
+    closeModal('leaderModal'); renderLeaders(); renderStudents();
+  };
+
+  openModal('leaderModal');
+}
+
+/* ====================== GROUP MODAL ====================== */
+let editingGroupId = null;
+function openGroupModal(id=null){
+  editingGroupId = id;
+  const title = document.getElementById('groupModalTitle');
+  const delBtn = document.getElementById('grDeleteBtn');
+  const saveBtn = document.getElementById('grSaveBtn');
+
+  // curator select
+  document.getElementById('grCurator').innerHTML = buildSelectOptions(store.curators,'id',x=>`${x.name} • ${x.city}`,'—');
+
+  if(id){
+    const g = store.groups.find(x=>x.id===id);
+    title.textContent='Редактировать группу';
+    document.getElementById('grName').value = g.name||'';
+    document.getElementById('grCurator').value = g.curatorId||'';
+    delBtn.style.display = '';
+    delBtn.onclick = ()=>{
+      if(confirm('Удалить группу?')){
+        store.students.forEach(s=>{ if(s.groupId===id) s.groupId=null; });
+        store.groups = store.groups.filter(x=>x.id!==id);
+        closeModal('groupModal'); renderGroups(); renderStudents();
+      }
+    };
+  } else {
+    title.textContent='Новая группа';
+    document.getElementById('grName').value = '';
+    document.getElementById('grCurator').value = '';
+    delBtn.style.display = 'none'; delBtn.onclick=null;
+  }
+
+  saveBtn.onclick = ()=>{
+    const name = document.getElementById('grName').value.trim();
+    const curatorId = document.getElementById('grCurator').value || null;
+    if(!name){ alert('Введите название'); return; }
+    if(editingGroupId){
+      const g = store.groups.find(x=>x.id===editingGroupId);
+      g.name = name; g.curatorId = curatorId;
+    } else {
+      store.groups.push({ id: uid(), name, curatorId });
+    }
+    closeModal('groupModal'); renderGroups(); renderStudents();
+  };
+
+  openModal('groupModal');
+}
+
+/* ====================== SESSION: EXPORT/IMPORT/HTML ====================== */
+function exportSession(){
+  const blob = new Blob([JSON.stringify(store, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'session.json';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+els.exportSessionBtn.addEventListener('click', exportSession);
+els.exportSessionBtn2 && els.exportSessionBtn2.addEventListener('click', exportSession);
+
+function importSessionFromFile(file){
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      // минимальная валидация
+      store = {
+        students: data.students||[],
+        curators: data.curators||[],
+        leaders: data.leaders||[],
+        groups: data.groups||[],
+        targets: data.targets||{aht:300, nsat:70},
+        theme: data.theme||'light'
+      };
+      setTheme(store.theme);
+      switchTab(currentTab); // re-render tab
+      renderStudents(); renderCurators(); renderLeaders(); renderGroups();
+      alert('Сессия загружена');
+    }catch(e){
+      alert('Ошибка JSON: '+e.message);
+    }
+  };
+  rd.readAsText(file);
+}
+els.importSession.addEventListener('change', (e)=>{ const f=e.target.files?.[0]; if(f) importSessionFromFile(f); e.target.value=''; });
+els.importSession2 && els.importSession2.addEventListener('change', (e)=>{ const f=e.target.files?.[0]; if(f) importSessionFromFile(f); e.target.value=''; });
+
+function downloadHtmlWithData(){
+  // Встраиваем store внутрь <script id="embeddedData">
+  let html = document.documentElement.outerHTML;
+  const injection = `<script id="embeddedData">window.__VSR_EMBED=${JSON.stringify(store)};<\/script>`;
+  if(html.includes('id="embeddedData"')){
+    html = html.replace(/<script id="embeddedData">[\s\S]*?<\/script>/, injection);
+  } else {
+    html = html.replace('</body>', injection+'\n</body>');
+  }
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download='vsr_cabinet.html'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+els.downloadHtmlBtn.addEventListener('click', downloadHtmlWithData);
+els.downloadHtmlBtn2 && els.downloadHtmlBtn2.addEventListener('click', downloadHtmlWithData);
+
+// Если файл открыт из сохранённого HTML — подхватим данные
+if(window.__VSR_EMBED){
+  try{ store = window.__VSR_EMBED; setTheme(store.theme||'light'); }catch{}
+}
+
+/* ====================== TARGETED BUTTONS (HEADER) ====================== */
+document.getElementById('addCuratorBtn')?.addEventListener('click', ()=> openCuratorModal());
+document.getElementById('addLeaderBtn')?.addEventListener('click', ()=> openLeaderModal());
+document.getElementById('addGroupBtn')?.addEventListener('click', ()=> openGroupModal());
+
+/* ====================== INIT ====================== */
+switchTab('students');
+
+/* ====================== SMALL UTILS ====================== */
+// Ничего
+</script>
+</body>
+</html>
