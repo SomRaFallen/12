@@ -493,33 +493,23 @@ let store = {
   theme: 'light'
 };
 
-// — Стартовые демо-данные (можно удалить) —
-store.curators = [
-  { id: uid(), name: 'Зубченко Александра', city: 'Пермь' },
-  { id: uid(), name: 'Сергеев Степан', city: 'Саратов' }
-];
-store.leaders = [
-  { id: uid(), name: 'Гурьянова Марина', city:'Саратов', direction:'VAS' },
-  { id: uid(), name: 'Варфаломеева Елена', city:'Саратов', direction:'KEY' }
-];
-store.groups = [
-  { id: uid(), name: 'УД-16', curatorId: store.curators[0].id }
-];
-
+// Очистка стартовых демо-данных
+store.curators = [];
+store.leaders = [];
+store.groups = [];
 store.students = [
   {
     id: uid(),
-    name: 'Веприцкая Анастасия',
-    type: 'Очный',
-    groupId: store.groups[0].id,
-    curatorId: store.curators[1].id,
-    leaderId: store.leaders[0].id,
-    avatar: '',
-    stats: [
-      // {date:'2025-08-01', aht:400, calls:60, promoters:10, neutrals:0, detractors:0, nsat:100}
-    ]
+    name: '',       // пустое имя
+    type: '',       // можно оставить 'Очный' или ''
+    groupId: null,  // нет группы
+    curatorId: null, // нет куратора
+    leaderId: null,  // нет лидера
+    avatar: '',     // аватар пустой
+    stats: []       // пустая статистика
   }
 ];
+
 
 /* ====================== STATE ====================== */
 let currentTab = 'students';
